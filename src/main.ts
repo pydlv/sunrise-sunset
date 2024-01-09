@@ -7,6 +7,7 @@ interface LocationInfo {
     country_name: string,
     latitude: string,
     longitude: string,
+    timezone: string,
 }
 
 async function getLocationAutomaticallyFromIpAddress(): Promise<LocationInfo> {
@@ -18,15 +19,16 @@ async function getLocationAutomaticallyFromIpAddress(): Promise<LocationInfo> {
         country_name: locationResponse.data.country_name,
         latitude: locationResponse.data.latitude,
         longitude: locationResponse.data.longitude,
+        timezone: locationResponse.data.timezone,
     };
 }
 
-async function getSunriseSunsetTimes(coordinates: {latitude: string, longitude: string}): Promise<[Moment, Moment]> {
-    const response = await axios.get(`https://api.sunrise-sunset.org/json?lat=${coordinates.latitude}&lng=${coordinates.longitude}`);
+async function getSunriseSunsetTimes(coordinates: {lat: string, lng: string, tzId: string}): Promise<[Moment, Moment]> {
+    const response = await axios.get(`https://api.sunrise-sunset.org/json?lat=${coordinates.lat}&lng=${coordinates.lng}&date=today&formatted=0&tzId=${coordinates.tzId}`);
     const sunrise = response.data.results.sunrise;
     const sunset = response.data.results.sunset;
 
-    return [moment(sunrise, "h:mm:ss A"), moment(sunset, "h:mm:ss A")];
+    return [moment(sunrise), moment(sunset)];
 }
 
 function askLocation(): Promise<string> {
@@ -57,11 +59,12 @@ async function main() {
             country_name: locationResponse.data[0].country,
             latitude: locationResponse.data[0].latitude,
             longitude: locationResponse.data[0].longitude,
+            timezone: locationResponse.data[0].timezone,
         };
         console.log("Location based on your input: " + locationInfo.city + ", " + locationInfo.country_name);
     }
 
-    const [sunrise, sunset] = await getSunriseSunsetTimes(locationInfo);
+    const [sunrise, sunset] = await getSunriseSunsetTimes({lat: locationInfo.latitude, lng: locationInfo.longitude, tzId: locationInfo.timezone});
     console.log(`Sunrise time: ${sunrise.format("HH:mm:ss")}`);
     console.log(`Sunset time: ${sunset.format("HH:mm:ss")}`);
 }
