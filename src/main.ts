@@ -6,10 +6,14 @@ import * as console from "console";
 
 async function getSunriseSunsetTimes(coordinates: {lat: string, lng: string, tzId: string}): Promise<[Moment, Moment]> {
     const response = await axios.get(`https://api.sunrise-sunset.org/json?lat=${coordinates.lat}&lng=${coordinates.lng}&date=today&formatted=0&tzId=${coordinates.tzId}`);
-    const sunrise = response.data.results.sunrise;
-    const sunset = response.data.results.sunset;
+    let sunrise = moment(response.data.results.sunrise);
+    let sunset = moment(response.data.results.sunset);
 
-    return [moment(sunrise), moment(sunset)];
+    if(sunset.isAfter(sunrise)) {
+        sunrise.add(1, 'days');
+    }
+
+    return [sunrise, sunset];
 }
 
 async function askSleepHours(): Promise<number> {
@@ -31,8 +35,7 @@ async function main() {
     const locationInfo = await getLocationInfo(location);
     const [sunrise, sunset] = await getSunriseSunsetTimes({lat: locationInfo.latitude, lng: locationInfo.longitude, tzId: locationInfo.timezone});
 
-    // Calculate the midpoint of sunrise and sunset where midpoint = (sunset + sunrise) / 2
-    const midpoint = sunrise.clone().add(sunrise.diff(sunset) / 2);
+    const midpoint = sunset.clone().add(sunrise.diff(sunset) / 2);
 
     console.log(`Sunrise time: ${sunrise.format("HH:mm:ss")}`);
     console.log(`Sunset time: ${sunset.format("HH:mm:ss")}`);
