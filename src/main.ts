@@ -34,6 +34,8 @@ async function main() {
     let location = await askLocation();
     if(!location) {
         location = await getLocationAutomaticallyFromIpAddress();
+
+        console.log("Location was automatically determined to be: " + location);
     }
 
     const [sunrise, sunset] = await getSunriseSunsetTimes(location);
